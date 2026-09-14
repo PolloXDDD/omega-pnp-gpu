@@ -80,14 +80,23 @@ The core executable is:
 omega_gpu_benchmark.py
 ```
 
-It generates planted satisfiable 3-SAT instances, compiles them into a sparse clause-variable incidence operator, performs weighted Jacobi relaxation on the GPU, thresholds the variable-node state, and evaluates all clauses in parallel.
+It generates planted satisfiable 3-SAT instances, compiles them into a sparse clause-variable incidence operator, performs weighted Jacobi relaxation, thresholds the variable-node state, and evaluates all clauses.
+
+The current implementation supports three execution modes:
+
+```text
+--backend auto   Try CUDA first and fall back to CPU.
+--backend cuda   Require CUDA/CuPy.
+--backend cpu    Use NumPy/SciPy.
+```
 
 ## Requirements
 
 - Python 3.10+
-- NVIDIA GPU with CUDA support
+- NVIDIA GPU with CUDA support for the CUDA benchmark
 - NumPy
-- CuPy
+- SciPy for the CPU fallback
+- CuPy for the CUDA backend
 
 Install NumPy:
 
@@ -111,6 +120,18 @@ Run the default benchmark:
 python omega_gpu_benchmark.py
 ```
 
+Force the CUDA backend:
+
+```bash
+python omega_gpu_benchmark.py --backend cuda
+```
+
+Use the CPU reference/fallback backend:
+
+```bash
+python omega_gpu_benchmark.py --backend cpu
+```
+
 Run a custom sequence of 3-SAT sizes:
 
 ```bash
@@ -123,9 +144,48 @@ python omega_gpu_benchmark.py \
 
 The benchmark prints one CSV-style row per instance size and saves the complete results to disk.
 
+## Google Colab
+
+Enable a GPU runtime first:
+
+```text
+Runtime -> Change runtime type -> GPU
+```
+
+Verify that the NVIDIA device is visible:
+
+```bash
+!nvidia-smi
+```
+
+Then test the CUDA backend:
+
+```python
+import cupy as cp
+
+print("CuPy:", cp.__version__)
+print("GPU count:", cp.cuda.runtime.getDeviceCount())
+print("CUDA runtime:", cp.cuda.runtime.runtimeGetVersion())
+print("CUDA driver:", cp.cuda.runtime.driverGetVersion())
+```
+
+If this succeeds, run:
+
+```bash
+!python omega_gpu_benchmark.py \
+    --backend cuda \
+    --sizes 1024 4096 16384 65536 262144 1048576 \
+    --ratio 4.2 \
+    --iters 200 \
+    --csv omega_gpu_results.csv
+```
+
+If CUDA is unavailable, `--backend auto` can fall back to the CPU implementation.
+
 ## Command-line options
 
 ```text
+--backend  auto, cuda, or cpu
 --sizes    Numbers of SAT variables to benchmark
 --ratio    Clause-to-variable ratio m/n
 --iters    Number of weighted-Jacobi relaxation iterations
@@ -254,6 +314,118 @@ elapsed_time / (nnz_offdiag * iterations).
 ```
 
 Once the GPU is saturated, this normalized quantity should remain approximately stable over increasing problem sizes if the computational kernel is scaling linearly with the sparse representation.
+
+## Experimental CUDA results
+
+A complete CUDA scaling run was executed with:
+
+```bash
+python omega_gpu_benchmark.py \
+    --backend cuda \
+    --sizes 1024 4096 16384 65536 262144 1048576 \
+    --ratio 4.2 \
+    --iters 200 \
+    --csv omega_gpu_results.csv
+```
+
+The measured results were:
+
+| SAT variables | Clauses | Sparse nodes | Off-diagonal nnz | 200 iterations | Gedge-visits/s | ns / edge / iter | Estimated memory |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1,024 | 4,301 | 5,325 | 25,780 | 331.496 ms | 0.0156 | 64.2933 | 0.30 MiB |
+| 4,096 | 17,203 | 21,299 | 103,198 | 9.495 ms | 2.1738 | 0.4600 | 1.19 MiB |
+| 16,384 | 68,813 | 85,197 | 412,840 | 9.376 ms | 8.8066 | 0.1136 | 4.77 MiB |
+| 65,536 | 275,251 | 340,787 | 1,651,498 | 11.167 ms | 29.5789 | 0.03381 | 19.10 MiB |
+| 262,144 | 1,101,005 | 1,363,149 | 6,605,998 | 35.250 ms | 37.4807 | 0.02668 | 76.40 MiB |
+| **1,048,576** | **4,404,019** | **5,452,595** | **26,424,080** | **140.588 ms** | **37.5908** | **0.02660** | **305.60 MiB** |
+
+The largest run therefore processed:
+
+```text
+1,048,576 SAT variables
+4,404,019 clauses
+5,452,595 sparse state nodes
+26,424,080 off-diagonal sparse entries
+200 relaxation iterations
+```
+
+in approximately:
+
+```text
+140.588 ms
+```
+
+with a measured sparse-relaxation throughput of:
+
+```text
+37.5908 billion edge-visits/second
+```
+
+### Observed large-instance scaling
+
+Between the two largest benchmark points:
+
+```text
+262,144 -> 1,048,576 variables
+```
+
+the instance size increases by exactly `4x`, while runtime changes from:
+
+```text
+35.250 ms -> 140.588 ms
+```
+
+or approximately:
+
+```text
+3.988x
+```
+
+The corresponding two-point empirical scaling exponent is
+
+```text
+alpha = log(140.588 / 35.250) / log(4)
+      ~= 0.9979
+```
+
+for the fixed-iteration sparse-relaxation benchmark.
+
+Thus, in the saturated large-instance regime measured here,
+
+```text
+T_relax(N) ~= Theta(N)
+```
+
+empirically for the fixed `K = 200` relaxation workload.
+
+The normalized sparse cost also stabilizes:
+
+```text
+262,144 vars:   0.026680 ns / edge / iteration
+1,048,576 vars: 0.026602 ns / edge / iteration
+```
+
+while measured throughput remains almost unchanged:
+
+```text
+37.4807 -> 37.5908 Gedge-visits/s
+```
+
+This is the expected signature of a bandwidth-limited sparse kernel whose total work is proportional to the number of stored couplings.
+
+### Benchmark interpretation
+
+These measurements establish the scaling behavior of the **GPU sparse-relaxation engine** used by the digital OMEGA prototype.
+
+The current planted 3-SAT incidence benchmark reports a clause-satisfaction fraction near `0.875` after thresholding, while `sat_found = 0` for the tested runs. Therefore these CUDA measurements should be interpreted as performance results for the sparse relaxation primitive, not yet as an end-to-end experimental SAT solver result.
+
+The exact SAT-to-OMEGA compilation layer is treated separately in the accompanying formal construction.
+
+The raw benchmark data can be stored in:
+
+```text
+results/omega_gpu_results.csv
+```
 
 ## Reproducibility experiment
 
