@@ -1,0 +1,63 @@
+\section{What Remains for a P=NP Theorem}
+\label{sec:pnp-roadmap}
+
+The present construction separates the remaining burden into explicit
+mathematical statements.
+
+The exact encoding already provides a polynomial-size sparse objective
+$E_F$ such that
+\begin{equation}
+\min E_F=0
+\iff
+F\in\SAT.
+\end{equation}
+The remaining task is not the SAT encoding; it is exact global optimization.
+
+A sufficient deterministic theorem would be the following.
+
+\begin{theorem}[Target theorem]
+There exists a deterministic polynomial-time transition rule and a polynomial
+$p$ such that, for every 3-CNF formula $F$, every run of the rule visits a
+global minimum of $E_F$ within at most
+\begin{equation}
+p(|F|)
+\end{equation}
+updates.
+\end{theorem}
+
+If this theorem holds, the algorithm records the smallest energy encountered.
+After $p(|F|)$ steps it returns SAT if the recorded minimum is zero and UNSAT
+otherwise.  Hence 3-SAT would lie in P and therefore
+\begin{equation}
+\boxed{P=NP.}
+\end{equation}
+
+The current stochastic focused dynamics does not yet establish this theorem.
+A polynomial block-contraction bound would imply polynomial expected hitting
+time for satisfiable instances and would support a randomized SAT algorithm,
+but randomized expected convergence alone is not a proof that SAT belongs to
+deterministic P.
+
+There are therefore three remaining proof obligations:
+
+\begin{enumerate}
+\item \textbf{Uniform global-minimum visitation.}
+      Prove a polynomial bound that applies to every 3-CNF formula, not only
+      planted or finite adversarial samples.
+
+\item \textbf{UNSAT decision.}
+      Positive-energy states cannot be recognized as globally optimal from
+      local information alone.  A deterministic visitation bound resolves this
+      by allowing the best energy seen during the complete certified run to be
+      used as the decision value.
+
+\item \textbf{Polynomial derandomization or deterministic progress.}
+      Replace stochastic exploration by a deterministic rule, or construct a
+      polynomially computable potential whose value decreases by an inverse
+      polynomial amount under a deterministically selectable update.
+\end{enumerate}
+
+The exact hitting-time function $H_F$ proves that a perfect progress potential
+exists for each finite satisfiable instance.  The current central question is
+whether its useful information can be represented and updated using only
+polynomial resources.
