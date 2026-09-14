@@ -1,0 +1,81 @@
+\section{Polynomial-Block Contraction Criterion}
+\label{sec:block-contraction}
+
+A spectral-radius bound alone is not sufficient to prove a polynomial hitting
+time for a general nonnormal substochastic transition matrix.  For example, a
+long nilpotent shift may have spectral radius zero while requiring a number of
+steps proportional to the number of transient states.  A stronger and directly
+probabilistic certificate is therefore used.
+
+Let $Q_F$ be the transition matrix restricted to states that have not yet
+reached the target set.  For satisfiable formulas the target is the set of
+zero-energy assignments.  For first-passage analysis of an unsatisfiable
+formula, the target may instead be the set of global minima.
+
+For an integer block length $L$, define
+\begin{equation}
+s_L(F)
+=
+\left\|Q_F^L\mathbf 1\right\|_\infty
+\end{equation}
+and
+\begin{equation}
+\varepsilon_L(F)=1-s_L(F).
+\end{equation}
+Here $s_L(F)$ is the largest, over all starting states, probability of avoiding
+the target for the next $L$ updates.
+
+\begin{theorem}[Geometric block bound]
+If
+\begin{equation}
+\varepsilon_L(F)>0,
+\end{equation}
+then the expected first-passage time satisfies
+\begin{equation}
+\boxed{
+\max_x\mathbb E_x[T]
+\le
+\frac{L}{\varepsilon_L(F)}.
+}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Conditioned on any history that has not yet reached the target, the probability
+of reaching the target during the next $L$ updates is at least
+$\varepsilon_L(F)$.  Therefore the number of $L$-step blocks required for
+success is stochastically dominated by a geometric random variable of mean
+$1/\varepsilon_L(F)$.
+\end{proof}
+
+Consequently, a uniform theorem of the form
+\begin{equation}
+L(n,m)=\operatorname{poly}(n+m),
+\qquad
+\varepsilon_{L(n,m)}(F)
+\ge
+\frac{1}{\operatorname{poly}(n+m)}
+\end{equation}
+for every 3-CNF formula would imply polynomial expected first-passage time.
+
+An evolutionary adversary was used to minimize the block absorption margin at
+the polynomial block length $L=n^2$.
+
+\begin{table}[t]
+\centering
+\caption{Adversarial $n^2$-block contraction search.}
+\begin{tabular}{rrrrrr}
+\toprule
+$n$ & $L$ & Max survival & $\varepsilon_L$ & $L/\varepsilon_L$ &
+$\max H_F$ \\
+\midrule
+8 & 64 & 0.826229 & 0.173771 & 368.30 & 275.00 \\
+10 & 100 & 0.899455 & 0.100545 & 994.58 & 738.99 \\
+12 & 144 & 0.752752 & 0.247248 & 582.41 & 357.17 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The search did not produce a vanishing block margin at these small sizes.  This
+is finite-instance evidence only and does not establish a uniform lower bound
+on $\varepsilon_L(F)$.

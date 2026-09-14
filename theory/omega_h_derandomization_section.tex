@@ -1,0 +1,51 @@
+\section{Exact Hitting-Time Potential and Deterministic Descent}
+\label{sec:h-derandomization}
+
+For a fixed satisfiable formula, let
+\begin{equation}
+H_F(x)=\mathbb E_x[T_{\mathrm{SAT}}].
+\end{equation}
+The Poisson equation implies
+\begin{equation}
+H_F(x)
+=
+1+\sum_yP_F(x,y)H_F(y)
+\end{equation}
+at every non-satisfying state.  Therefore at least one transition with positive
+probability satisfies
+\begin{equation}
+\boxed{
+H_F(y)\le H_F(x)-1.
+}
+\end{equation}
+
+This gives an exact deterministic derandomization principle: if $H_F$ were
+available in polynomial time, choose at each state an allowed successor having
+minimum $H_F$.  The process must terminate after at most
+$\lceil H_F(x_0)\rceil$ steps.
+
+The complete finite-state hitting-time functions of the standardized
+adversarial finalists were used to test this policy.
+
+\begin{table}[t]
+\centering
+\caption{Deterministic descent guided by the exact hitting-time potential.}
+\begin{tabular}{rrrr}
+\toprule
+$n$ & $\max H_F$ & Maximum deterministic steps & Steps/$n^2$ \\
+\midrule
+8 & 167.741 & 8 & 0.125 \\
+10 & 424.181 & 10 & 0.100 \\
+12 & 386.410 & 12 & 0.083 \\
+14 & 340.104 & 14 & 0.071 \\
+16 & 703.494 & 17 & 0.066 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No violation of the guaranteed one-unit $H_F$ descent was observed; this
+identity follows analytically from the Poisson equation.  The obstacle is
+computational rather than existential: the present exact representation of
+$H_F$ has $2^n$ states.  To obtain a deterministic polynomial-time SAT
+algorithm, one needs a polynomially computable surrogate or representation
+that preserves a comparable descent guarantee.

@@ -1,0 +1,31 @@
+\section{First-Passage Tests on UNSAT Instances}
+\label{sec:unsat-first-passage}
+
+For an unsatisfiable formula the focused dynamics never encounters zero
+energy.  Nevertheless, a certified global-optimization algorithm need only
+visit a global minimum; it may record the best energy encountered and continue.
+
+For diagnostic purposes, the set of exact global minima was therefore made
+absorbing only in the first-passage analysis.  Twenty random strict UNSAT
+instances were generated at each tested size with $m=6n$, and the worst sample
+by expected first-passage time is reported below.
+
+\begin{table}[t]
+\centering
+\caption{Worst random UNSAT first-passage sample at each tested size.}
+\begin{tabular}{rrrrrr}
+\toprule
+$n$ & $m$ & $E_{\min}$ & $\max H_F$ & $\varepsilon_{n^2}$ &
+$n^2/\varepsilon_{n^2}$ \\
+\midrule
+8 & 48 & 1 & 69.175 & 0.5917 & 108.2 \\
+10 & 60 & 1 & 128.332 & 0.5278 & 189.5 \\
+12 & 72 & 2 & 133.198 & 0.6642 & 216.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These experiments show that the same first-passage framework can study positive
+global minima.  They do not supply a stopping certificate to the actual
+algorithm: that requires the uniform deterministic visitation theorem stated
+in Section~\ref{sec:pnp-roadmap}.
