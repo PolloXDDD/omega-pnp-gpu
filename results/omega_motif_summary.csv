@@ -1,0 +1,6 @@
+file,n,m,solutions,all_ones_is_solution,nonzero_local_minima,strict_nonzero_local_minima,max_local_min_energy,max_strict_min_energy,max_local_min_distance_to_solution,mean_local_min_distance_to_solution,max_strict_min_distance_to_solution,clauses_with_1_positive,clauses_with_2_positive,clauses_with_3_positive,degree_min,degree_max,degree_mean,degree_gini,max_abs_sign_bias,closure_clauses,recovered_units,recovered_binaries,equalities,inequalities
+/mnt/data/omega_equal_n8.cnf,8,34,1,1,24,1,3,2,7,4.416666666666667,4,21,11,2,6,19,12.75,0.18627450980392157,7,37,0,3,0,0
+/mnt/data/omega_equal_n10.cnf,10,42,1,1,38,1,4,1,9,5.026315789473684,7,22,17,3,10,16,12.6,0.0761904761904762,7,43,0,1,0,0
+/mnt/data/omega_equal_n12.cnf,12,50,1,1,98,1,4,1,11,6.23469387755102,4,29,18,3,9,22,12.5,0.16444444444444445,4,54,0,4,0,0
+/mnt/data/omega_equal_n14.cnf,14,59,1,1,198,3,5,1,13,7.005050505050505,11,27,28,4,9,20,12.642857142857142,0.11743341404358354,7,62,0,3,0,0
+/mnt/data/omega_equal_n16.cnf,16,67,1,1,438,1,6,1,12,7.397260273972603,3,34,24,9,9,17,12.5625,0.12033582089552239,10,67,0,0,0,0
