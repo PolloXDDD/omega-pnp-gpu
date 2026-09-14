@@ -1,0 +1,321 @@
+\section{Exact SAT Encoding}
+\label{sec:exact-sat-encoding}
+
+This section gives an exact polynomial-size compilation from 3-SAT to a sparse
+quadratic unconstrained binary optimization (QUBO) instance and then to an
+Ising form suitable for the OMEGA coupling model.
+
+\subsection{Literal False Indicators}
+
+Let $x_i\in\{0,1\}$ denote a Boolean variable. For a literal $\ell$, define its
+false indicator by
+\begin{equation}
+f(\ell)=
+\begin{cases}
+1-x_i, & \ell=x_i,\\
+x_i, & \ell=\neg x_i.
+\end{cases}
+\end{equation}
+Thus,
+\begin{equation}
+f(\ell)=1
+\iff
+\ell \text{ is false}.
+\end{equation}
+
+For a 3-literal clause
+\begin{equation}
+C=(\ell_1\lor \ell_2\lor \ell_3),
+\end{equation}
+the exact violation indicator is
+\begin{equation}
+E_C
+=
+f(\ell_1)f(\ell_2)f(\ell_3).
+\end{equation}
+Therefore
+\begin{equation}
+E_C=
+\begin{cases}
+0,& C\text{ is satisfied},\\
+1,& C\text{ is violated}.
+\end{cases}
+\end{equation}
+
+For a formula
+\begin{equation}
+F=C_1\land\cdots\land C_m,
+\end{equation}
+define
+\begin{equation}
+E_F(x)
+=
+\sum_{r=1}^{m}E_{C_r}(x).
+\end{equation}
+
+\begin{theorem}[Exact clause-count energy]
+\label{thm:exact-clause-energy}
+For every 3-CNF formula $F$,
+\begin{equation}
+E_F(x)
+=
+\#\{C_r:C_r\text{ is violated by }x\}.
+\end{equation}
+Consequently,
+\begin{equation}
+\boxed{
+\min_{x\in\{0,1\}^n}E_F(x)=0
+\iff
+F\in\SAT.
+}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Every summand $E_{C_r}$ is exactly the Boolean indicator of violation of the
+corresponding clause. Their sum is therefore the number of violated clauses.
+The minimum is zero if and only if there exists an assignment violating no
+clause.
+\end{proof}
+
+\subsection{Exact Quadratization of a 3-Clause}
+
+The cubic product can be reduced to quadratic form using one auxiliary binary
+variable $y_C\in\{0,1\}$ per 3-clause.
+
+Let
+\begin{equation}
+a=f(\ell_1),\qquad
+b=f(\ell_2),\qquad
+c=f(\ell_3).
+\end{equation}
+Introduce
+\begin{equation}
+y_C\in\{0,1\},
+\end{equation}
+and define
+\begin{equation}
+\boxed{
+Q_C(a,b,c,y_C)
+=
+y_Cc
++
+M\left(
+ab-2ay_C-2by_C+3y_C
+\right),
+}
+\label{eq:clause-qubo}
+\end{equation}
+where $M\geq 1$.
+
+The penalty term
+\begin{equation}
+P(a,b,y)
+=
+ab-2ay-2by+3y
+\end{equation}
+is zero exactly when
+\begin{equation}
+y=ab,
+\end{equation}
+and is positive otherwise.
+
+\begin{theorem}[Exact one-auxiliary 3-clause QUBO]
+\label{thm:exact-qubo-clause}
+For every $a,b,c\in\{0,1\}$ and every $M\geq1$,
+\begin{equation}
+\boxed{
+\min_{y_C\in\{0,1\}}
+Q_C(a,b,c,y_C)
+=
+abc.
+}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+If $ab=0$, choosing $y_C=0$ gives
+\begin{equation}
+Q_C=0=abc.
+\end{equation}
+Any inconsistent choice $y_C=1$ incurs a nonnegative penalty of at least one
+unit when $M\geq1$.
+
+If $ab=1$, consistency requires $y_C=1$. Substitution gives
+\begin{equation}
+Q_C=c=abc.
+\end{equation}
+Choosing $y_C=0$ instead incurs penalty $M\geq1$, so it cannot produce a value
+below $abc\in\{0,1\}$. Hence the minimum is exactly $abc$.
+\end{proof}
+
+\subsection{Formula-Level Sparse QUBO}
+
+For each 3-clause $C_r$, introduce one auxiliary bit $y_r$. Define
+\begin{equation}
+Q_F(x,y)
+=
+\sum_{r=1}^{m}
+Q_{C_r}(x,y_r).
+\end{equation}
+
+By Theorem~\ref{thm:exact-qubo-clause},
+\begin{equation}
+\min_y Q_F(x,y)
+=
+E_F(x).
+\end{equation}
+Therefore
+\begin{equation}
+\boxed{
+\min_{x,y}Q_F(x,y)=0
+\iff
+F\in\SAT.
+}
+\end{equation}
+
+The compilation introduces at most one auxiliary variable per clause, so
+\begin{equation}
+N_{\mathrm{QUBO}}
+=
+n+m.
+\end{equation}
+Each clause contributes only a constant number of linear and quadratic terms.
+Hence
+\begin{equation}
+\boxed{
+N_{\mathrm{QUBO}}=O(n+m),
+\qquad
+\nnz(Q_F)=O(n+m).
+}
+\end{equation}
+
+\subsection{Polynomial-Time Compiler}
+
+\begin{algorithm}[t]
+\caption{\textsc{Compile3SATToExactQUBO}}
+\label{alg:compile-exact-qubo}
+\begin{algorithmic}[1]
+\Require 3-CNF formula $F$ with variables $x_1,\ldots,x_n$
+\Ensure Sparse QUBO $Q_F$ with $\min Q_F=0\iff F\in\SAT$
+\State initialize empty sparse QUBO $Q_F$
+\State $r\gets n$
+\ForAll{clauses $C=(\ell_1\lor\ell_2\lor\ell_3)$ in $F$}
+    \State define $a\gets f(\ell_1)$, $b\gets f(\ell_2)$, $c\gets f(\ell_3)$
+    \State allocate auxiliary bit $y_C\gets x_{r+1}$
+    \State $r\gets r+1$
+    \State add
+    \[
+    y_Cc+M(ab-2ay_C-2by_C+3y_C)
+    \]
+    to $Q_F$
+\EndFor
+\State \Return $Q_F$
+\end{algorithmic}
+\end{algorithm}
+
+Because each clause is processed once and contributes $O(1)$ sparse terms, the
+compiler runs in
+\begin{equation}
+O(n+m)
+\end{equation}
+time under a standard sparse representation.
+
+\subsection{Exact QUBO-to-Ising Conversion}
+
+Introduce spins
+\begin{equation}
+s_i\in\{-1,+1\}
+\end{equation}
+through
+\begin{equation}
+x_i=\frac{1+s_i}{2}.
+\end{equation}
+For a QUBO
+\begin{equation}
+Q(x)
+=
+q_0
++
+\sum_i q_i x_i
++
+\sum_{i<j}q_{ij}x_ix_j,
+\end{equation}
+substitution gives an Ising Hamiltonian
+\begin{equation}
+H(s)
+=
+C
++
+\sum_i h_i s_i
++
+\sum_{i<j}J_{ij}s_is_j,
+\end{equation}
+with
+\begin{align}
+J_{ij} &= \frac{q_{ij}}{4},\\
+h_i &= \frac{q_i}{2}
++\frac14\sum_{j\neq i}q_{ij},\\
+C &= q_0
++\frac12\sum_iq_i
++\frac14\sum_{i<j}q_{ij}.
+\end{align}
+The substitution is exact, so
+\begin{equation}
+\boxed{
+\min_x Q(x)
+=
+\min_s H(s).
+}
+\end{equation}
+
+\subsection{Dual-Rail OMEGA Interpretation}
+
+Represent each Ising spin by a dual-rail OMEGA Boolean Cell:
+\begin{equation}
+s_i=+1
+\iff
+(V_i^+,V_i^-)=(V_{\mathrm{DD}},0),
+\end{equation}
+and
+\begin{equation}
+s_i=-1
+\iff
+(V_i^+,V_i^-)=(0,V_{\mathrm{DD}}).
+\end{equation}
+
+For a pair coupling $J_{ij}s_is_j$:
+
+\begin{itemize}
+    \item $J_{ij}<0$ favors equal spins and is represented by same-rail
+    coupling;
+    \item $J_{ij}>0$ favors opposite spins and is represented by cross-rail
+    coupling.
+\end{itemize}
+
+Local fields $h_is_i$ are represented by asymmetric bias coupling to the
+reference rails.
+
+This mapping preserves the sparse graph structure of the exact QUBO/Ising
+instance. Therefore the exact SAT compilation remains of polynomial size when
+translated into the abstract OMEGA coupling graph.
+
+\subsection{Scope of the Encoding Result}
+
+The exact encoding theorem proves
+\begin{equation}
+\boxed{
+F\in\SAT
+\iff
+E_F^\star=0
+\iff
+Q_F^\star=0
+\iff
+H_F^\star=0.
+}
+\end{equation}
+
+This establishes correctness of the SAT-to-energy compilation. It does not, by
+itself, prove that a particular physical or digital relaxation dynamics reaches
+the global minimum in polynomial time. Global convergence is analyzed
+separately.
